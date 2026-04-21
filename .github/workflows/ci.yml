@@ -1,0 +1,15 @@
+# .github/workflows/ci.yml
+name: Tool moodiymobile CI
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    uses: catalyst/catalyst-moodle-workflows/.github/workflows/ci.yml@main
+    with:
+      disable_phpdoc: false
+      disable_phpcs: false
+      codechecker_max_warnings: 0
+      disable_behat: false
+      disable_grunt: false
+      disable_release: true
