@@ -156,6 +156,7 @@ if (!is_array($postdata)) {
     try {
         \tool_moodiymobile\utility::store_airnotifier_settings($postdata['data']);
         \tool_moodiymobile\utility::apply_airnotifier_settings($postdata['data']);
+        \tool_moodiymobile\utility::enable_internal_site_with_airnotifier($postdata['data']);
         $response = [
             'status' => 'success',
         ];

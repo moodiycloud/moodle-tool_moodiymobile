@@ -153,6 +153,23 @@ class utility {
     }
 
     /**
+     * Enable the mobile app plugin once an internal hosted site receives an Airnotifier key.
+     *
+     * @param array $settings
+     * @return void
+     */
+    public static function enable_internal_site_with_airnotifier(array $settings) {
+        $normalized = self::normalize_airnotifier_settings($settings);
+        $accesskey = trim((string) ($normalized['airnotifieraccesskey'] ?? ''));
+
+        if ($accesskey === '' || !self::is_internal_site()) {
+            return;
+        }
+
+        set_config('enabled', 1, 'tool_moodiymobile');
+    }
+
+    /**
      * Determine whether the current Moodle instance is an internal hosted site.
      *
      * @return bool
