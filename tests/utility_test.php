@@ -208,6 +208,78 @@ final class utility_test extends \advanced_testcase {
     }
 
     /**
+     * Internal hosted sites should be enabled after a valid Airnotifier key arrives.
+     */
+    public function test_enable_internal_site_with_airnotifier_enables_internal_sites_with_key(): void {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+
+        utility::enable_internal_site_with_airnotifier([
+            'airnotifieraccesskey' => 'secret',
+        ]);
+
+        $this->assertSame('1', get_config('tool_moodiymobile', 'enabled'));
+        $this->assertDebuggingCalled(
+            'tool_moodiymobile auto-enabled via signed Airnotifier callback for internal hosted site.',
+            DEBUG_DEVELOPER
+        );
+    }
+
+    /**
+     * Internal hosted sites should not be enabled without an Airnotifier key.
+     */
+    public function test_enable_internal_site_with_airnotifier_requires_key(): void {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+
+        utility::enable_internal_site_with_airnotifier([
+            'airnotifieraccesskey' => ' ',
+        ]);
+
+        $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
+    }
+
+    /**
+     * Internal hosted sites should not be enabled if the callback omits the Airnotifier key.
+     */
+    public function test_enable_internal_site_with_airnotifier_handles_missing_key(): void {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+
+        utility::enable_internal_site_with_airnotifier([
+            'androidappid' => 'com.example.app',
+        ]);
+
+        $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
+    }
+
+    /**
+     * External sites should not be auto-enabled by an Airnotifier settings callback.
+     */
+    public function test_enable_internal_site_with_airnotifier_does_not_enable_external_sites(): void {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $CFG->forced_plugin_settings = [];
+
+        utility::enable_internal_site_with_airnotifier([
+            'airnotifieraccesskey' => 'secret',
+        ]);
+
+        $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
+    }
+
+    /**
      * Resetting settings should restore defaults and optionally clear the URL scheme.
      */
     public function test_reset_airnotifier_settings_restores_defaults_and_can_clear_forcedurlscheme(): void {
