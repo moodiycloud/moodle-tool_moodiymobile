@@ -222,6 +222,10 @@ final class utility_test extends \advanced_testcase {
         ]);
 
         $this->assertSame('1', get_config('tool_moodiymobile', 'enabled'));
+        $this->assertDebuggingCalled(
+            'tool_moodiymobile auto-enabled via signed Airnotifier callback for internal hosted site.',
+            DEBUG_DEVELOPER
+        );
     }
 
     /**
@@ -236,6 +240,23 @@ final class utility_test extends \advanced_testcase {
 
         utility::enable_internal_site_with_airnotifier([
             'airnotifieraccesskey' => ' ',
+        ]);
+
+        $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
+    }
+
+    /**
+     * Internal hosted sites should not be enabled if the callback omits the Airnotifier key.
+     */
+    public function test_enable_internal_site_with_airnotifier_handles_missing_key(): void {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+
+        utility::enable_internal_site_with_airnotifier([
+            'androidappid' => 'com.example.app',
         ]);
 
         $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
