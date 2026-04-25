@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- auto-enable the mobile plugin for internal hosted sites after a signed AirNotifier sync with a non-empty key
 - add the missing privacy provider for MoodiyCloud mobile provisioning flows
 - normalize public licensing and ownership metadata for MoodiyCloud
 - expand the README for public distribution and future Moodle plugins-directory submission
