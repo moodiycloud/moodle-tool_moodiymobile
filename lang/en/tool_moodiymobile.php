@@ -39,5 +39,5 @@ $string['privacy:metadata:moodiycloud'] = 'In order to provision the MoodiyCloud
 $string['privacy:metadata:moodiycloud:product'] = 'The MoodiyCloud mobile product identifier requested for the site.';
 $string['privacy:metadata:moodiycloud:siteuuid'] = 'The site UUID shared with MoodiyCloud to identify the registered Moodle site.';
 $string['moodiysignup'] = 'Sign up for product at MoodiyCloud';
-$string['moodiysignup_help'] = 'You will be redirected to the MoodiyCloud for signup and free mobile app. Note that your site registration id will be sent as well, to make the signup process easier for you.';
+$string['moodiysignup_help'] = 'You will be redirected to MoodiyCloud for signup and free mobile app provisioning. Your MoodiyCloud site registration id will be sent to make the signup process easier. This is a MoodiyCloud provisioning flow, not Moodle\'s official site registration service.';
 $string['pluginname'] = 'Moodiy mobile app';
