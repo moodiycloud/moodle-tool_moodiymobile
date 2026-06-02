@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes.
+
+## 0.1.3 - 2026-06-02
+
 - clarify that the mobile provisioning flow is a MoodiyCloud integration
 
 ## 0.1.2 - 2026-04-25

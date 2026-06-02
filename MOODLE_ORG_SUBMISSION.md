@@ -8,8 +8,8 @@ record for `tool_moodiymobile`.
 - Name: Moodiy mobile app
 - Component: `tool_moodiymobile`
 - Plugin type: Administration tool (`tool`)
-- Release name: `0.1.2`
-- Version: `2026042500`
+- Release name: `0.1.3`
+- Version: `2026060200`
 - Maturity: Alpha
 - Supported Moodle versions: 4.5, 5.0, 5.1
 - License: GNU GPL v3 or later
@@ -54,6 +54,7 @@ the Moodle.org approval issue, not in the public repository.
 
 ## Release notes
 
+- Clarified that the mobile provisioning flow is a MoodiyCloud integration.
 - Auto-enable the mobile plugin for internal hosted sites after a signed AirNotifier sync with a non-empty key.
 - Added privacy metadata for MoodiyCloud mobile provisioning flows.
 - Moodle.org release workflow scaffolding.
