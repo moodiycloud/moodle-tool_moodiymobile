@@ -4,6 +4,9 @@
 site connect to MoodiyCloud's mobile-app provisioning flow and related
 Airnotifier configuration.
 
+This is a MoodiyCloud integration. It is separate from Moodle's official site
+registration service.
+
 ## What the plugin does
 
 - checks whether the site is already registered with MoodiyCloud
@@ -89,6 +92,8 @@ Recommended submission values:
 
 This plugin integrates with MoodiyCloud services, including the MoodiyCloud
 portal used for mobile-app provisioning.
+
+It does not register the site with Moodle's official site registration service.
 
 The plugin can share the registered site UUID with MoodiyCloud during the mobile
 signup flow so MoodiyCloud can provision the correct mobile-app settings for the

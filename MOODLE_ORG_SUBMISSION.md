@@ -27,6 +27,9 @@ AirNotifier configuration delivered for the site, syncs relevant Moodle mobile
 settings, and lets administrators enable or disable the MoodiyCloud mobile
 integration.
 
+This is a MoodiyCloud integration and is separate from Moodle's official site
+registration service.
+
 The plugin depends on `tool_moodiyregistration` because it uses the registered
 site UUID when provisioning mobile settings with MoodiyCloud.
 
