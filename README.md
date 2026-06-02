@@ -55,6 +55,36 @@ php admin/cli/upgrade.php
 - If the site does not yet have mobile settings, follow the MoodiyCloud signup link.
 - Once mobile settings are provisioned, enable the integration from the admin form.
 
+## Moodle plugins directory submission
+
+Suggested short description:
+
+```text
+Provision MoodiyCloud mobile app and AirNotifier settings for registered sites.
+```
+
+Suggested full description:
+
+```text
+Moodiy mobile is a Moodle administration tool that connects a registered Moodle
+site to the MoodiyCloud mobile-app provisioning flow. It stores and applies the
+AirNotifier configuration delivered for the site, syncs relevant Moodle mobile
+settings, and lets administrators enable or disable the MoodiyCloud mobile
+integration.
+```
+
+Recommended submission values:
+
+- Plugin type: `tool`
+- Component: `tool_moodiymobile`
+- Website URL: `https://moodiycloud.com/free-mobile-app-for-moodle`
+- Source control URL: `https://github.com/moodiycloud/moodle-tool_moodiymobile`
+- Bug tracker URL: `https://github.com/moodiycloud/moodle-tool_moodiymobile/issues`
+- Documentation URL: `https://github.com/moodiycloud/moodle-tool_moodiymobile#readme`
+- License: GNU GPL v3 or later
+- Supported Moodle versions: Moodle 4.5, 5.0, and 5.1
+- Required dependency: `tool_moodiyregistration` version `2025062300` or later
+
 ## External service and privacy
 
 This plugin integrates with MoodiyCloud services, including the MoodiyCloud
@@ -66,6 +96,11 @@ site.
 
 Some MoodiyCloud mobile offerings may require a separate MoodiyCloud account or
 service entitlement.
+
+Moodle.org reviewers can request temporary reviewer access or mobile provisioning
+support via `support@moodiycloud.com`; any private test credentials should be
+shared through the Moodle.org approval issue rather than committed to this
+repository.
 
 ## Issue tracker and support
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- No unreleased changes.
+
+## 0.1.2 - 2026-04-25
+
 - auto-enable the mobile plugin for internal hosted sites after a signed AirNotifier sync with a non-empty key, without requiring a Moodle admin page visit
 - add the missing privacy provider for MoodiyCloud mobile provisioning flows
 - normalize public licensing and ownership metadata for MoodiyCloud
