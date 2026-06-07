@@ -4,6 +4,13 @@
 
 - No unreleased changes.
 
+## 0.2.0 - 2026-06-07
+
+- declare support for Moodle 5.2 and 5.3 (supported range Moodle 4.5–5.3)
+- raise the minimum required Moodle to 4.5 to match the supported range
+- replace the deprecated `$OUTPUT->notification()` call with a `\core\output\notification` render
+- promote plugin maturity from alpha to stable
+
 ## 0.1.3 - 2026-06-02
 
 - clarify that the mobile provisioning flow is a MoodiyCloud integration

@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'tool_moodiymobile';
-$plugin->release = '0.1.3';
-$plugin->version = 2026060200;
-$plugin->requires = 2022112800;
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->supported = [405, 501];
+$plugin->release = '0.2.0';
+$plugin->version = 2026060700;
+$plugin->requires = 2024100700;
+$plugin->maturity = MATURITY_STABLE;
+$plugin->supported = [405, 503];
 $plugin->dependencies = [
     'tool_moodiyregistration' => 2025062300,
 ];

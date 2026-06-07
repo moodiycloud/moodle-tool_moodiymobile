@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `tool_moodiymobile` is a Moodle admin tool plugin (`admin/tool/moodiymobile`) that configures mobile app integration between Moodle sites and the Moodiy Cloud platform. It manages airnotifier push notification settings and mobile app enablement.
 
 - **Component:** `tool_moodiymobile`
-- **Moodle version:** Requires 4.0+ (`2022112800`)
+- **Moodle version:** Requires 4.5+ (`2024100700`); supports Moodle 4.5–5.3 (`supported = [405, 503]`)
 - **Dependency:** `tool_moodiyregistration` (for site UUID and registration status)
-- **Maturity:** Alpha (v0.1.0)
+- **Maturity:** Stable (v0.2.0)
 
 ## Development Setup
 

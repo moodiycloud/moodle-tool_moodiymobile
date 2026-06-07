@@ -66,7 +66,11 @@ $out = '';
 // Internal client logic.
 if ($isinternal) {
     if (!$hasairnotifier) {
-        $out = $OUTPUT->notification(get_string('enabled_requires_app', 'tool_moodiymobile'), 'warning');
+        $notify = new \core\output\notification(
+            get_string('enabled_requires_app', 'tool_moodiymobile'),
+            \core\output\notification::NOTIFY_WARNING
+        );
+        $out = $OUTPUT->render($notify);
     } else {
         set_config('enabled', 1, 'tool_moodiymobile');
         \tool_moodiymobile\utility::apply_airnotifier_settings($airnotifiersetting);
