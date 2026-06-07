@@ -21,6 +21,8 @@ Current plugin metadata declares support for:
 - Moodle `4.5`
 - Moodle `5.0`
 - Moodle `5.1`
+- Moodle `5.2`
+- Moodle `5.3`
 
 ## Dependency
 
@@ -85,7 +87,7 @@ Recommended submission values:
 - Bug tracker URL: `https://github.com/moodiycloud/moodle-tool_moodiymobile/issues`
 - Documentation URL: `https://github.com/moodiycloud/moodle-tool_moodiymobile#readme`
 - License: GNU GPL v3 or later
-- Supported Moodle versions: Moodle 4.5, 5.0, and 5.1
+- Supported Moodle versions: Moodle 4.5, 5.0, 5.1, 5.2, and 5.3
 - Required dependency: `tool_moodiyregistration` version `2025062300` or later
 
 ## External service and privacy
