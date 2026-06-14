@@ -153,6 +153,56 @@ class utility {
     }
 
     /**
+     * Applies the mobile-app branding for the currently configured Airnotifier site.
+     *
+     * On agentless Premium boxes the signed-callback `?data=` / updatesettings.php paths
+     * never run: the access key is written straight to the core `airnotifieraccesskey`
+     * config via admin/cli/cfg.php, and branding is staged on the `tool_moodiymobile`
+     * config. This step makes the live mobile-app branding keys (app names, androidappid,
+     * iosappid, setuplink, forcedurlscheme) consistent with that configured key so the
+     * provisioned site is correctly branded without an admin page visit.
+     *
+     * The effective branding is the stored Airnotifier payload merged over the plugin
+     * defaults, with the live `airnotifieraccesskey` config value taking precedence so the
+     * access key the box already received is never overwritten. It is a no-op (returning
+     * false) when no Airnotifier access key is configured, or when no branding payload has
+     * been staged on the plugin config, so callers can rely on the return value to report
+     * whether branding was applied.
+     *
+     * Skipping the write when nothing is staged is important: merging an empty stored
+     * payload over self::DEFAULTSETTING_AIRNOTIFIER would push the Moodle defaults
+     * (e.g. com.moodle.moodlemobile) into the live `tool_mobile` config and clobber any
+     * branding an admin already configured. We only apply branding when real branding was
+     * actually staged.
+     *
+     * @return bool True when branding was applied, false when no access key or staged
+     *              branding payload is available.
+     */
+    public static function apply_airnotifier_branding(): bool {
+        $accesskey = trim((string) (get_config('moodle', 'airnotifieraccesskey') ?: ''));
+        if ($accesskey === '') {
+            return false;
+        }
+
+        $stored = self::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
+
+        // No branding staged: do not overwrite admin-configured tool_mobile branding with
+        // the plugin/Moodle defaults. Apply only when a real payload was staged.
+        if ($stored === []) {
+            return false;
+        }
+
+        // Defaults first, stored payload over them, then pin the live access key so the
+        // key the box already holds is authoritative.
+        $effective = array_merge(self::DEFAULTSETTING_AIRNOTIFIER, $stored);
+        $effective['airnotifieraccesskey'] = $accesskey;
+
+        self::apply_airnotifier_settings($effective);
+
+        return true;
+    }
+
+    /**
      * Enable the mobile app plugin once an internal hosted site receives an Airnotifier key.
      *
      * Keep this separate from apply_airnotifier_settings(): applying config values and deciding
@@ -170,6 +220,18 @@ class utility {
         if ($accesskey === '' || !self::is_internal_site()) {
             return;
         }
+
+        // Ensure the live access key is set before branding so apply_airnotifier_branding()
+        // sees a configured key. In the signed-callback flow apply_airnotifier_settings() has
+        // already run, but this keeps the enable path correct when called on its own.
+        if (trim((string) (get_config('moodle', 'airnotifieraccesskey') ?: '')) === '') {
+            set_config('airnotifieraccesskey', $accesskey, self::SETTING_COMPONENTS['airnotifieraccesskey']);
+        }
+
+        // Make the live mobile-app branding consistent with the configured key. On agentless
+        // Premium boxes the key may have been written via cfg.php with the branding staged on
+        // tool_moodiymobile config, so re-apply it here to keep the app correctly branded.
+        self::apply_airnotifier_branding();
 
         if (get_config('tool_moodiymobile', 'enabled')) {
             return;

@@ -4,6 +4,13 @@
 
 - No unreleased changes.
 
+## 0.2.1 - 2026-06-14
+
+- apply the live mobile-app branding (app names, androidappid, iosappid, setuplink,
+  forcedurlscheme) from the configured AirNotifier key on internal hosted sites, so
+  agentless Premium boxes that receive the key via `admin/cli/cfg.php` are correctly
+  branded without an admin page visit
+
 ## 0.2.0 - 2026-06-07
 
 - declare support for Moodle 5.2 and 5.3 (supported range Moodle 4.5–5.3)
