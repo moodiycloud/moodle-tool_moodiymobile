@@ -165,10 +165,18 @@ class utility {
      * The effective branding is the stored Airnotifier payload merged over the plugin
      * defaults, with the live `airnotifieraccesskey` config value taking precedence so the
      * access key the box already received is never overwritten. It is a no-op (returning
-     * false) when no Airnotifier access key is configured, so callers can rely on the
-     * return value to report whether branding was applied.
+     * false) when no Airnotifier access key is configured, or when no branding payload has
+     * been staged on the plugin config, so callers can rely on the return value to report
+     * whether branding was applied.
      *
-     * @return bool True when branding was applied, false when no access key is configured.
+     * Skipping the write when nothing is staged is important: merging an empty stored
+     * payload over self::DEFAULTSETTING_AIRNOTIFIER would push the Moodle defaults
+     * (e.g. com.moodle.moodlemobile) into the live `tool_mobile` config and clobber any
+     * branding an admin already configured. We only apply branding when real branding was
+     * actually staged.
+     *
+     * @return bool True when branding was applied, false when no access key or staged
+     *              branding payload is available.
      */
     public static function apply_airnotifier_branding(): bool {
         $accesskey = trim((string) (get_config('moodle', 'airnotifieraccesskey') ?: ''));
@@ -177,6 +185,12 @@ class utility {
         }
 
         $stored = self::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
+
+        // No branding staged: do not overwrite admin-configured tool_mobile branding with
+        // the plugin/Moodle defaults. Apply only when a real payload was staged.
+        if ($stored === []) {
+            return false;
+        }
 
         // Defaults first, stored payload over them, then pin the live access key so the
         // key the box already holds is authoritative.

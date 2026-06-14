@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'tool_moodiymobile';
-$plugin->release = '0.2.1';
-$plugin->version = 2026061400;
+$plugin->release = '0.2.2';
+$plugin->version = 2026061401;
 $plugin->requires = 2024100700;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->supported = [405, 503];

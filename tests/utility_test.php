@@ -221,6 +221,29 @@ final class utility_test extends \advanced_testcase {
     }
 
     /**
+     * Branding application must not clobber admin-configured tool_mobile branding with the
+     * plugin defaults when no branding payload has been staged on the plugin config.
+     */
+    public function test_apply_airnotifier_branding_is_noop_without_staged_branding(): void {
+        $this->resetAfterTest(true);
+
+        // A live access key exists, but no branding payload was staged on the plugin config.
+        set_config('airnotifieraccesskey', 'box-minted-key');
+        unset_config('airnotifiersetting', 'tool_moodiymobile');
+
+        // An admin has already configured their own tool_mobile branding.
+        set_config('androidappid', 'com.admin.custom', 'tool_mobile');
+        set_config('iosappid', '111222333', 'tool_mobile');
+
+        // No staged branding => no-op, so the admin branding survives untouched.
+        $this->assertFalse(utility::apply_airnotifier_branding());
+        $this->assertSame('com.admin.custom', get_config('tool_mobile', 'androidappid'));
+        $this->assertSame('111222333', get_config('tool_mobile', 'iosappid'));
+        // The live access key is never altered by a no-op branding call.
+        $this->assertSame('box-minted-key', get_config('moodle', 'airnotifieraccesskey'));
+    }
+
+    /**
      * Branding application writes the live mobile-app keys from the stored payload merged
      * over defaults, while keeping the already-configured access key authoritative.
      */
@@ -265,17 +288,53 @@ final class utility_test extends \advanced_testcase {
         set_config('enabled', 0, 'tool_moodiymobile');
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];
 
+        // Admin has configured custom mobile-app branding; no branding payload is staged
+        // on the plugin config.
+        set_config('androidappid', 'com.admin.custom', 'tool_mobile');
+
         utility::enable_internal_site_with_airnotifier([
             'airnotifieraccesskey' => 'secret',
         ]);
 
         $this->assertSame('1', get_config('tool_moodiymobile', 'enabled'));
-        // Enabling an internal site also applies the live mobile-app branding for that key.
+        // The live access key the box received is set.
         $this->assertSame('secret', get_config('moodle', 'airnotifieraccesskey'));
-        $this->assertSame(
-            utility::DEFAULTSETTING_AIRNOTIFIER['androidappid'],
-            get_config('tool_mobile', 'androidappid')
+        // No branding was staged, so branding is a no-op: the admin-configured branding is
+        // NOT clobbered by the plugin/Moodle defaults.
+        $this->assertSame('com.admin.custom', get_config('tool_mobile', 'androidappid'));
+        $this->assertDebuggingCalled(
+            'tool_moodiymobile auto-enabled via signed Airnotifier callback for internal hosted site.',
+            DEBUG_DEVELOPER
         );
+    }
+
+    /**
+     * Enabling an internal hosted site also applies any staged mobile-app branding.
+     */
+    public function test_enable_internal_site_with_airnotifier_applies_staged_branding(): void {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+        set_config('enabled', 0, 'tool_moodiymobile');
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+
+        // Branding staged on the plugin config (agentless Premium provisioning path).
+        utility::store_airnotifier_settings([
+            'airnotifierappname' => 'commoodiyclient',
+            'androidappid' => 'com.moodiy.client',
+            'iosappid' => '987654321',
+        ]);
+
+        utility::enable_internal_site_with_airnotifier([
+            'airnotifieraccesskey' => 'secret',
+        ]);
+
+        $this->assertSame('1', get_config('tool_moodiymobile', 'enabled'));
+        $this->assertSame('secret', get_config('moodle', 'airnotifieraccesskey'));
+        // Staged branding is applied to the live mobile-app config.
+        $this->assertSame('commoodiyclient', get_config('moodle', 'airnotifierappname'));
+        $this->assertSame('com.moodiy.client', get_config('tool_mobile', 'androidappid'));
+        $this->assertSame('987654321', get_config('tool_mobile', 'iosappid'));
         $this->assertDebuggingCalled(
             'tool_moodiymobile auto-enabled via signed Airnotifier callback for internal hosted site.',
             DEBUG_DEVELOPER
