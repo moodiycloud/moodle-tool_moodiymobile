@@ -117,15 +117,11 @@ final class deployment_branding {
      * @return bool
      */
     private static function matches_current_pair(array $settings): bool {
-        global $DB;
         $digest = $settings[self::PRECONDITION];
         if ($digest === null) {
             return false;
         }
-        $rows = $DB->get_records_sql(
-            'SELECT name, value FROM {config} WHERE name IN (?, ?) ORDER BY name FOR UPDATE',
-            ['airnotifieraccesskey', 'airnotifierappname']
-        );
+        $rows = utility::lock_airnotifier_pair();
         $key = $rows['airnotifieraccesskey']->value ?? null;
         $name = $rows['airnotifierappname']->value ?? null;
         return count($rows) === 2 && is_string($key) && is_string($name)

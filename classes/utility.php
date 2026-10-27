@@ -180,10 +180,7 @@ class utility {
         try {
             if ($pair) {
                 // An unchanged value still needs the pair lock before the other field changes.
-                $DB->get_records_sql(
-                    'SELECT id FROM {config} WHERE name IN (?, ?) ORDER BY name FOR UPDATE',
-                    ['airnotifieraccesskey', 'airnotifierappname']
-                );
+                self::lock_airnotifier_pair();
             }
             foreach ($normalized as $key => $value) {
                 $component = self::SETTING_COMPONENTS[$key] ?? null;
@@ -210,6 +207,28 @@ class utility {
             }
             throw $exception;
         }
+    }
+
+    /**
+     * Read and lock the exact global pair within the caller's transaction.
+     *
+     * Moodle 4.5 supports SQL Server, whose update locks use table hints.
+     * Other supported database families use SELECT FOR UPDATE.
+     *
+     * @return array Persisted pair rows keyed by name.
+     */
+    public static function lock_airnotifier_pair(): array {
+        global $DB;
+        if (!$DB->is_transaction_started()) {
+            throw new \coding_exception('The Airnotifier pair requires an owning transaction.');
+        }
+        $mssql = $DB->get_dbfamily() === 'mssql';
+        $tablehint = $mssql ? ' WITH (UPDLOCK, HOLDLOCK)' : '';
+        $suffix = $mssql ? '' : ' FOR UPDATE';
+        return $DB->get_records_sql(
+            'SELECT name, value FROM {config}' . $tablehint . ' WHERE name IN (?, ?) ORDER BY name' . $suffix,
+            ['airnotifieraccesskey', 'airnotifierappname']
+        );
     }
 
     /**

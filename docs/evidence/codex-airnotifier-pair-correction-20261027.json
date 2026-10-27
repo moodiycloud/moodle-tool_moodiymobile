@@ -19,12 +19,19 @@
   "plugin": {
     "base": "16c1c1b3",
     "native": {
-      "passed": 36,
-      "assertions": 180,
+      "passed": 37,
+      "assertions": 186,
       "phpunit_deprecations": 6
     },
     "moodle_phpcs": "passed_zero_warnings",
-    "moodle_phpdoc": "passed_zero_findings"
+    "moodle_phpdoc": "passed_zero_findings",
+    "sql_server_review": {
+      "finding": 4385889131,
+      "validated": true,
+      "driver_contract_test": "passed",
+      "native_sql_server": "unavailable_not_claimed",
+      "pair_lock_shared_by_both_plugin_callers": true
+    }
   },
   "provider": {
     "actual_native_cases": 5,
@@ -105,7 +112,13 @@
     "plugin-pair-phpdoc-final.log": "73ea17b4696b8d438bdfda148273c0618f5517e3cc6d87804eb2fdc69588735f",
     "semaphore-native-pair-locked-green.log": "bbf71b9e6715dc0e1f31d82801204dfffcc03c956c0b28f04845509386ff8194",
     "semaphore-noop-pair-red.log": "20a269d602da2a9b6160901b2b6768a9c5cb82b7b52b5bb58b4bc47dc1e608d2",
-    "core-pair-actual-composition.log": "67951dc1cbf4e84f59dc9fbc8816203e81d2c3369c7dc150078a7a080bec24c1"
+    "core-pair-actual-composition.log": "67951dc1cbf4e84f59dc9fbc8816203e81d2c3369c7dc150078a7a080bec24c1",
+    "plugin-pair-mssql-final.log": "6ea1d3e0bcf649fdc4265470b0d65908234184351c773405e12d3d773dc6556e",
+    "plugin-mssql-phpcs.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "plugin-mssql-phpdoc.log": "73ea17b4696b8d438bdfda148273c0618f5517e3cc6d87804eb2fdc69588735f",
+    "semaphore-native-pair-mssql-helper-final.log": "95e2b4c66a4cc4f233599d59433c11e9537a5a5c2c0950c7f94f3c1521e01966",
+    "core-pair-composed-helper-final.log": "0b212f2dd3cd42e5c4e823fbad179e53095ce41ee33465829d7c28c14ff87b63",
+    "pair-http-admin-helper-final.log": "7a49e63dc4b50bc18dd0a6d4e4c0a1ddce0fe776e03b3df0c86a0715bc64ec20"
   },
   "limits": [
     "Hosted new Core/plugin/provider heads remain release gates.",

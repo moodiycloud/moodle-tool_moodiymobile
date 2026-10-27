@@ -25,3 +25,9 @@ Publish the atomic provider and independent Cloud verifier after the merged Core
 Standalone/bundled business selection remains the [explicit owner question](https://github.com/moodiycloud/moodiy/issues/1140#issuecomment-6433478668). This fix preserves coherent pairs under current write rights; it does not impose a one-plan limit, grant standalone provider delivery or decide the preferred physical app.
 
 The CI matrix covers Moodle4.5,5.0,5.1,5.2 and main with PostgreSQL/MariaDB and supported PHP versions. Earlier CI corrections resolve Composer under root/public layouts and use MariaDB11.4 only for main with the official image healthcheck. These change no deployed database.
+
+## SQL Server compatibility review
+
+Review4385889131 correctly identified that SQL Server, supported by the plugin's declared [Moodle4.5 floor](https://moodledev.io/general/releases/4.5#database-requirements), does not implement SELECT FOR UPDATE. Both plugin callers now share the same transaction-bound pair reader: the MSSQL family uses [UPDLOCK and HOLDLOCK table hints](https://learn.microsoft.com/en-us/sql/t-sql/queries/hints-transact-sql-table#updlock); other supported families retain FOR UPDATE. This keeps row synchronization with provider writers and introduces no advisory-lock or identity-write fallback.
+
+The SQL Server driver-contract test verifies bound exact pair parameters, the update/transaction hints and absence of unsupported syntax. Final real MySQL/native plugin gate passes37 tests/186 assertions, and the five separate-process provider controls, actual four-source composition and13 HTTP/admin controls pass again. No local SQL Server engine/client is available, so this is not native SQL Server execution or contention acceptance. The new hosted PostgreSQL/MariaDB matrix remains a separate gate.

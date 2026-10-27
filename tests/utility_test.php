@@ -281,6 +281,33 @@ final class utility_test extends \advanced_testcase {
     }
 
     /**
+     * SQL Server locks the same bound pair without unsupported FOR UPDATE syntax.
+     */
+    public function test_pair_lock_uses_sql_server_transaction_hints(): void {
+        global $DB;
+        $original = $DB;
+        $driver = $this->createMock(\moodle_database::class);
+        $driver->expects($this->once())->method('is_transaction_started')->willReturn(true);
+        $driver->expects($this->once())->method('get_dbfamily')->willReturn('mssql');
+        $rows = ['airnotifierappname' => (object)['name' => 'airnotifierappname', 'value' => 'fixture']];
+        $driver->expects($this->once())->method('get_records_sql')->willReturnCallback(
+            function ($sql, $params) use ($rows): array {
+                $this->assertStringNotContainsString('FOR UPDATE', $sql);
+                $this->assertStringContainsString('WITH (UPDLOCK, HOLDLOCK)', $sql);
+                $this->assertStringContainsString('ORDER BY name', $sql);
+                $this->assertSame(['airnotifieraccesskey', 'airnotifierappname'], $params);
+                return $rows;
+            }
+        );
+        $DB = $driver;
+        try {
+            $this->assertSame($rows, utility::lock_airnotifier_pair());
+        } finally {
+            $DB = $original;
+        }
+    }
+
+    /**
      * Complete pair writes require their own physical commit; partial branding retains nested behavior.
      */
     public function test_complete_pair_refuses_outer_transaction_before_writes(): void {
