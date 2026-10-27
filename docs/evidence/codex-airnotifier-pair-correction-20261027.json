@@ -1,0 +1,116 @@
+{
+  "observed_at": "2026-10-27T06:48:15.504883+00:00",
+  "scope": "Isolated task-owned Core MySQL/Moodle schemas, loopback HTTP and native child processes; no live effects",
+  "historical_evidence": "codex-deployment-branding-20261027.json records original key-only candidate and is not pair-correction acceptance",
+  "core": {
+    "base": "8553e52bdff3f7e478b301563ea007cee8b29e4b",
+    "broad_affected": {
+      "passed": 573,
+      "assertions": 4383
+    },
+    "final_test_typing_repeat": {
+      "passed": 27,
+      "assertions": 338
+    },
+    "configured_phpstan_level10": "passed",
+    "pint": "passed",
+    "docs": "passed"
+  },
+  "plugin": {
+    "base": "16c1c1b3",
+    "native": {
+      "passed": 36,
+      "assertions": 180,
+      "phpunit_deprecations": 6
+    },
+    "moodle_phpcs": "passed_zero_warnings",
+    "moodle_phpdoc": "passed_zero_findings"
+  },
+  "provider": {
+    "actual_native_cases": 5,
+    "passed": true,
+    "noop_key_repair_causal_failure": true,
+    "cache_limit": "Warm/in-flight readers may retain older coherent snapshots; independent proof uses fresh SQL"
+  },
+  "cloud": {
+    "candidate": "e36d5159f0e1799b49e51d7a0ed74d8441139ca8",
+    "pull_request": "https://github.com/vidyamantra/moodiy_cloud_apis/pull/479",
+    "hosted_checks": "3 passed",
+    "same_head_review": "completed_no_findings"
+  },
+  "actual_composition": {
+    "observed_at": "2026-10-27T06:43:05.215546+00:00",
+    "test_exit": 0,
+    "fixture_restored_exactly": true,
+    "physical_after_chain": {
+      "pid": 3594235,
+      "global_app_name": "fixturemobile",
+      "component_app_name": "fixturemobile",
+      "key_sha256": "9432eaeb3d35fc96836055c988e45bd07ef2ef9f63c88f8f3f22f5287a4cb32a",
+      "coherent_synthetic_pair": true
+    },
+    "real_boundaries": [
+      "Core database queue and owner frame",
+      "Core signed plugin HTTP over task-owned loopback",
+      "Moodle plugin pair precondition/staging/apply",
+      "Semaphore stdin pair writer on native Moodle DML",
+      "Cloud independent pair verifier on a separate native connection",
+      "Core signed callback route and private schema2 proof",
+      "Persisted180-second retry delay assertion and real followup worker"
+    ],
+    "synthetic_external_boundaries": [
+      "broker response",
+      "Cloud provider acceptance/dispatch IDs",
+      "Cloud registry connector and vault input for owned synthetic key",
+      "Only owned queue available_at advanced after exact180-second delay assertion; no future HTTP clock"
+    ],
+    "live_systems_touched": false,
+    "assertions": 36,
+    "passed": 1,
+    "private_test_sha256": "0848b186648c96f6eb9816742e5dea4b24360b7170fe25e864cf27fd50d678dd"
+  },
+  "actual_http_admin": {
+    "observed_at": "2026-10-27T06:47:16Z",
+    "passed_controls": 13,
+    "controls": {
+      "missing_pair_staged": true,
+      "admin_missing_pair_stays_disabled": true,
+      "admin_unproved_pair_stays_disabled": true,
+      "matching_pair_and_seven_fields_apply": true,
+      "admin_matching_pair_preserved": true,
+      "invalid_hmac_no_write": true,
+      "stale_timestamp_no_write": true,
+      "mixed_key_no_write": true,
+      "partial_fields_no_write": true,
+      "unknown_mode_no_write": true,
+      "malformed_digest_no_write": true,
+      "external_refused_no_write": true,
+      "old_peer_refused_no_write": true
+    },
+    "fixture_restored_exactly": true,
+    "live_effects": false,
+    "scope": "Real signed endpoint and authenticated admin-page HTTP in task-owned Moodle; schema2 digest input synthetic here, independently verified in separate composed receipt."
+  },
+  "actual_dml_failure": {
+    "failure_class": "dml_write_exception",
+    "transaction_closed": true,
+    "all_target_rows_unchanged": true
+  },
+  "artifact_sha256": {
+    "core-pair-broad.log": "50e90dd8c62ad8505f0ccec01c8a4e4ec7c3f48dc151f81d94cd7249c6c5a82d",
+    "core-pair-changed-final.log": "259e326a1d7b08e49a022ae149158b0168b16c731c77dbfbdbc07822c7bbc6a4",
+    "core-pair-phpstan-final2.log": "b0530267f1bddd3b5a3242fed29f18c69eca1bd04b4b030148863bec1e324f2a",
+    "plugin-pair-final.log": "63da6d55ecdf03a9e2d25b0fcfe5d189428f353af4fcfb9e026932c51444d5d5",
+    "plugin-pair-phpcs-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "plugin-pair-phpdoc-final.log": "73ea17b4696b8d438bdfda148273c0618f5517e3cc6d87804eb2fdc69588735f",
+    "semaphore-native-pair-locked-green.log": "bbf71b9e6715dc0e1f31d82801204dfffcc03c956c0b28f04845509386ff8194",
+    "semaphore-noop-pair-red.log": "20a269d602da2a9b6160901b2b6768a9c5cb82b7b52b5bb58b4bc47dc1e608d2",
+    "core-pair-actual-composition.log": "67951dc1cbf4e84f59dc9fbc8816203e81d2c3369c7dc150078a7a080bec24c1"
+  },
+  "limits": [
+    "Hosted new Core/plugin/provider heads remain release gates.",
+    "No actual external broker/Cloud admission or serving runtime refresh was performed.",
+    "Standalone selection business decision remains unanswered in issue1140 comment6433478668.",
+    "Default-off rotation remains disabled."
+  ]
+}

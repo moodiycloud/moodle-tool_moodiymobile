@@ -33,6 +33,7 @@ final class deployment_branding_test extends \advanced_testcase {
      */
     private function payload(): array {
         return [deployment_branding::FIELD => deployment_branding::MODE, 'timestamp' => time(),
+            'airnotifier_expected_key_sha256' => hash('sha256', 'provider-owned'),
             'airnotifierurl' => 'https://push.example.test', 'airnotifierport' => 443,
             'airnotifiermobileappname' => 'com.fixture.mobile', 'airnotifierappname' => 'fixturemobile',
             'androidappid' => 'com.fixture.android', 'iosappid' => '123456789',
@@ -47,6 +48,7 @@ final class deployment_branding_test extends \advanced_testcase {
         $this->resetAfterTest(true);
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];
         set_config('airnotifieraccesskey', 'provider-owned');
+        set_config('airnotifierappname', 'fixturemobile');
         set_config('enabled', 0, 'tool_moodiymobile');
         $payload = $this->payload();
         $this->assertSame('applied', deployment_branding::apply($payload));
@@ -72,10 +74,47 @@ final class deployment_branding_test extends \advanced_testcase {
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];
         unset_config('airnotifieraccesskey');
         set_config('enabled', 0, 'tool_moodiymobile');
-        $this->assertSame('staged_waiting_for_key', deployment_branding::apply($this->payload()));
+        $this->assertSame('staged_waiting_for_pair', deployment_branding::apply($this->payload()));
         $this->assertFalse($DB->record_exists('config', ['name' => 'airnotifieraccesskey']));
         $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
-        $this->assertSame('com.fixture.android', get_config('tool_mobile', 'androidappid'));
+        $stored = utility::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
+        $this->assertSame('com.fixture.android', $stored['androidappid']);
+        $this->assertNotSame('com.fixture.android', get_config('tool_mobile', 'androidappid'));
+    }
+
+    /**
+     * A valid key for another app and an absent private proof cannot authorize branding.
+     */
+    public function test_foreign_or_unproved_pair_stays_staged_through_all_helpers(): void {
+        global $CFG, $DB;
+        $this->resetAfterTest(true);
+        $CFG->forced_plugin_settings = ['auth_maintenance' => []];
+        foreach (['key', 'name', 'proof'] as $mismatch) {
+            $key = $mismatch === 'key' ? 'standalone-key' : 'provider-owned';
+            $name = $mismatch === 'name' ? 'standalone-app' : 'fixturemobile';
+            set_config('airnotifieraccesskey', $key);
+            set_config('airnotifierappname', $name);
+            set_config('androidappid', 'com.original', 'tool_mobile');
+            set_config('enabled', 0, 'tool_moodiymobile');
+            $payload = $this->payload();
+            if ($mismatch === 'proof') {
+                $payload['airnotifier_expected_key_sha256'] = null;
+            }
+            $this->assertSame('staged_waiting_for_pair', deployment_branding::apply($payload));
+            $stored = utility::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
+            ksort($payload);
+            $this->assertSame($payload, $stored);
+            $this->assertFalse(utility::apply_airnotifier_branding());
+            utility::apply_airnotifier_settings($stored);
+            utility::enable_internal_site_with_airnotifier(['airnotifieraccesskey' => 'must-not-write']);
+            $this->assertSame($key, $DB->get_field('config', 'value', ['name' => 'airnotifieraccesskey']));
+            $this->assertSame($name, $DB->get_field('config', 'value', ['name' => 'airnotifierappname']));
+            $this->assertSame('com.original', get_config('tool_mobile', 'androidappid'));
+            $this->assertSame('0', get_config('tool_moodiymobile', 'enabled'));
+        }
+        unset_config('airnotifieraccesskey');
+        utility::enable_internal_site_with_airnotifier(['airnotifieraccesskey' => 'must-not-fill']);
+        $this->assertFalse($DB->record_exists('config', ['name' => 'airnotifieraccesskey']));
     }
 
     /**
@@ -121,12 +160,12 @@ final class deployment_branding_test extends \advanced_testcase {
      */
     public function test_acknowledgement_is_bound_to_request_and_state(): void {
         $payload = $this->payload();
-        $response = deployment_branding::acknowledgement($payload, 'fixture-registration', 'staged_waiting_for_key');
+        $response = deployment_branding::acknowledgement($payload, 'fixture-registration', 'staged_waiting_for_pair');
         ksort($payload);
         $ack = $response['deployment_branding'];
         $this->assertSame(hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR)), $ack['request_sha256']);
-        $this->assertFalse($ack['key_write_performed']);
-        $this->assertSame('staged_waiting_for_key', $ack['state']);
+        $this->assertFalse($ack['pair_write_performed']);
+        $this->assertSame('staged_waiting_for_pair', $ack['state']);
         $this->assertSame(
             hash_hmac('sha256', json_encode($ack, JSON_THROW_ON_ERROR), 'fixture-registration'),
             $response['deployment_branding_signature']
@@ -162,8 +201,10 @@ final class deployment_branding_test extends \advanced_testcase {
         $this->preventResetByRollback();
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];
         set_config('airnotifieraccesskey', 'provider-before');
+        set_config('airnotifierappname', 'fixturemobile');
         set_config('enabled', 0, 'tool_moodiymobile');
         $payload = $this->payload();
+        $payload['airnotifier_expected_key_sha256'] = hash('sha256', 'provider-before');
         if ($helper) {
             utility::store_airnotifier_settings($payload);
             $payload['fixture_legacy_helper'] = true;
@@ -192,11 +233,11 @@ final class deployment_branding_test extends \advanced_testcase {
             $result = fgets($pipes[1]);
             $this->assertNotFalse($result);
             $result = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
-            $expectedstate = $helper ? $newkey !== null : ($newkey === null ? 'staged_waiting_for_key' : 'applied');
+            $expectedstate = $helper ? false : 'staged_waiting_for_pair';
             $this->assertSame($expectedstate, $result['state']);
             $this->assertSame($newkey ?? false, $DB->get_field('config', 'value', ['name' => 'airnotifieraccesskey']));
             $this->assertSame(
-                $helper || $newkey === null ? '0' : '1',
+                '0',
                 $DB->get_field('config_plugins', 'value', ['plugin' => 'tool_moodiymobile', 'name' => 'enabled'])
             );
             fclose($pipes[0]);

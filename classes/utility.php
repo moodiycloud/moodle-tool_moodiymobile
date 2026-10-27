@@ -117,6 +117,11 @@ class utility {
             return [];
         }
 
+        if (array_key_exists(deployment_branding::FIELD, $settings)) {
+            // Never strip a stored preservation guard and reinterpret it as a
+            // legacy write on a later admin visit or branding helper call.
+            return deployment_branding::valid_payload($settings) ? $settings : [];
+        }
         return self::normalize_airnotifier_settings($settings);
     }
 
@@ -127,7 +132,14 @@ class utility {
      * @return void
      */
     public static function store_airnotifier_settings(array $settings) {
-        $normalized = self::normalize_airnotifier_settings($settings);
+        if (array_key_exists(deployment_branding::FIELD, $settings)) {
+            if (!deployment_branding::valid_payload($settings)) {
+                throw new \invalid_parameter_exception('Invalid deployment branding.');
+            }
+            $normalized = $settings;
+        } else {
+            $normalized = self::normalize_airnotifier_settings($settings);
+        }
         ksort($normalized);
         $encoded = json_encode($normalized);
         if ($encoded === false) {
@@ -144,26 +156,82 @@ class utility {
      * @return void
      */
     public static function apply_airnotifier_settings(array $settings) {
+        global $DB, $CFG;
+        if (array_key_exists(deployment_branding::FIELD, $settings)) {
+            deployment_branding::apply($settings);
+            return;
+        }
         $normalized = self::normalize_airnotifier_settings($settings);
+        $pair = array_key_exists('airnotifieraccesskey', $normalized)
+            && array_key_exists('airnotifierappname', $normalized);
+        $transaction = null;
+        $previous = [];
+        if ($pair) {
+            // These real endpoint/admin callers own their commit. A nested
+            // allow_commit cannot invalidate caches after the physical commit.
+            $DB->transactions_forbidden();
+            $normalized = ['airnotifieraccesskey' => $normalized['airnotifieraccesskey'],
+                'airnotifierappname' => $normalized['airnotifierappname']] + $normalized;
+            foreach (['airnotifieraccesskey', 'airnotifierappname'] as $name) {
+                $previous[$name] = [property_exists($CFG, $name), $CFG->$name ?? null];
+            }
+            $transaction = $DB->start_delegated_transaction();
+        }
+        try {
+            if ($pair) {
+                // An unchanged value still needs the pair lock before the other field changes.
+                $DB->get_records_sql(
+                    'SELECT id FROM {config} WHERE name IN (?, ?) ORDER BY name FOR UPDATE',
+                    ['airnotifieraccesskey', 'airnotifierappname']
+                );
+            }
+            foreach ($normalized as $key => $value) {
+                $component = self::SETTING_COMPONENTS[$key] ?? null;
+                set_config($key, $value, $component);
+            }
+            if ($transaction !== null) {
+                $transaction->allow_commit();
+                self::invalidate_airnotifier_caches();
+            }
+        } catch (\Throwable $exception) {
+            if ($transaction !== null) {
+                try {
+                    $transaction->rollback($exception);
+                } finally {
+                    foreach ($previous as $name => [$existed, $value]) {
+                        if ($existed) {
+                            $CFG->$name = $value;
+                        } else {
+                            unset($CFG->$name);
+                        }
+                    }
+                    self::invalidate_airnotifier_caches();
+                }
+            }
+            throw $exception;
+        }
+    }
 
-        foreach ($normalized as $key => $value) {
-            $component = self::SETTING_COMPONENTS[$key] ?? null;
-            set_config($key, $value, $component);
+    /**
+     * Invalidate only the config scopes written by mobile settings, after commit/rollback.
+     */
+    public static function invalidate_airnotifier_caches(): void {
+        foreach (['core', 'tool_mobile', 'tool_moodiymobile'] as $component) {
+            \cache_helper::invalidate_by_definition('core', 'config', [], $component);
         }
     }
 
     /**
      * Applies the mobile-app branding for the currently configured Airnotifier site.
      *
-     * On agentless Premium boxes the deployment writes the access key straight to
-     * the core `airnotifieraccesskey` config via admin/cli/cfg.php. Branding may be
-     * staged by the deployment or by the signed key-preserving updatesettings.php mode.
+     * On agentless Premium boxes the deployment writes the global identity pair atomically. Branding may be
+     * staged by the deployment or by the signed pair-preserving updatesettings.php mode.
      * This step makes the live mobile-app branding keys (app names, androidappid,
      * iosappid, setuplink, forcedurlscheme) consistent with that configured key so the
      * provisioned site is correctly branded without an admin page visit.
      *
      * The effective branding is the stored Airnotifier payload merged over the plugin
-     * defaults, excluding `airnotifieraccesskey` from writes so the access key the box
+     * defaults, excluding both global identity fields so the pair the box
      * already received is never overwritten. It is a no-op (returning
      * false) when no Airnotifier access key is configured, or when no branding payload has
      * been staged on the plugin config, so callers can rely on the return value to report
@@ -179,11 +247,13 @@ class utility {
      *              branding payload is available.
      */
     public static function apply_airnotifier_branding(): bool {
+        $stored = self::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
+        if (array_key_exists(deployment_branding::FIELD, $stored)) {
+            return deployment_branding::apply($stored) === 'applied';
+        }
         if (!self::has_configured_airnotifier_key()) {
             return false;
         }
-
-        $stored = self::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
 
         // No branding staged: do not overwrite admin-configured tool_mobile branding with
         // the plugin/Moodle defaults. Apply only when a real payload was staged.
@@ -194,7 +264,7 @@ class utility {
         // Branding never needs to rewrite a key. A bootstrap-cached value may have
         // been replaced or removed by its owner since this process started.
         $effective = array_merge(self::DEFAULTSETTING_AIRNOTIFIER, $stored);
-        unset($effective['airnotifieraccesskey']);
+        unset($effective['airnotifieraccesskey'], $effective['airnotifierappname']);
 
         self::apply_airnotifier_settings($effective);
 
@@ -231,11 +301,26 @@ class utility {
             return;
         }
 
+        $stored = self::decode_airnotifier_settings(get_config('tool_moodiymobile', 'airnotifiersetting'));
+        if (array_key_exists(deployment_branding::FIELD, $stored)) {
+            deployment_branding::apply($stored);
+            return;
+        }
+
         // Ensure the live access key is set before branding so apply_airnotifier_branding()
         // sees a configured key. In the signed-callback flow apply_airnotifier_settings() has
         // already run, but this keeps the enable path correct when called on its own.
-        if (trim((string) (get_config('moodle', 'airnotifieraccesskey') ?: '')) === '') {
-            set_config('airnotifieraccesskey', $accesskey, self::SETTING_COMPONENTS['airnotifieraccesskey']);
+        if (!self::has_configured_airnotifier_key()) {
+            $identity = ['airnotifieraccesskey' => $accesskey];
+            if (array_key_exists('airnotifierappname', $normalized)) {
+                $identity['airnotifierappname'] = $normalized['airnotifierappname'];
+            } else if ($stored !== []) {
+                // Preserve the existing legacy bootstrap choice, but install
+                // its staged/default app name in the same transaction as the key.
+                $effective = array_merge(self::DEFAULTSETTING_AIRNOTIFIER, $stored);
+                $identity['airnotifierappname'] = $effective['airnotifierappname'];
+            }
+            self::apply_airnotifier_settings($identity);
         }
 
         // Make the live mobile-app branding consistent with the configured key. On agentless

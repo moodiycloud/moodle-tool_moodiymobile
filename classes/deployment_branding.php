@@ -28,7 +28,7 @@ namespace tool_moodiymobile;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Signed branding updates that never write the deployment-owned access key.
+ * Signed branding updates that never write the deployment-owned global identity pair.
  *
  * @package tool_moodiymobile
  * @copyright 2026 MoodiyCloud <support@moodiycloud.com>
@@ -36,10 +36,13 @@ defined('MOODLE_INTERNAL') || die();
  */
 final class deployment_branding {
     /** @var string Explicit alternate request mode. */
-    public const MODE = 'preserve_deployment_key_v1';
+    public const MODE = 'preserve_deployment_pair_v1';
 
     /** @var string Signed request discriminator. */
     public const FIELD = 'airnotifier_update_mode';
+
+    /** @var string Private signed precondition from current pair-verified delivery. */
+    public const PRECONDITION = 'airnotifier_expected_key_sha256';
 
     /**
      * Require the complete existing branding map, without any access key.
@@ -56,7 +59,11 @@ final class deployment_branding {
         }
         $fields = utility::SETTING_COMPONENTS;
         unset($fields['airnotifieraccesskey']);
-        if (count($settings) !== count($fields) + 2) {
+        if (count($settings) !== count($fields) + 3 || !array_key_exists(self::PRECONDITION, $settings)) {
+            return false;
+        }
+        $digest = $settings[self::PRECONDITION];
+        if ($digest !== null && (!is_string($digest) || preg_match('/^[a-f0-9]{64}$/D', $digest) !== 1)) {
             return false;
         }
         foreach ($fields as $field => $component) {
@@ -67,11 +74,11 @@ final class deployment_branding {
                 return false;
             }
         }
-        return true;
+        return is_string($settings['airnotifierappname']) && trim($settings['airnotifierappname']) !== '';
     }
 
     /**
-     * Stage/apply non-key settings and enable an internal site only when its key exists.
+     * Stage all fields; apply branding and enable only against the exact current global pair.
      *
      * The ordinary branding/enablement helpers can write a cached key back. This path
      * deliberately never passes a key to either helper, including during bootstrap.
@@ -86,21 +93,43 @@ final class deployment_branding {
         }
         $transaction = $DB->start_delegated_transaction();
         try {
-            $branding = utility::normalize_airnotifier_settings($settings);
-            utility::store_airnotifier_settings($branding);
-            utility::apply_airnotifier_settings($branding);
-
-            // Presence authorizes enablement only; it never authorizes a key write.
-            $present = utility::has_configured_airnotifier_key();
-            if ($present) {
+            utility::store_airnotifier_settings($settings);
+            $matched = self::matches_current_pair($settings);
+            if ($matched) {
+                $branding = utility::normalize_airnotifier_settings($settings);
+                unset($branding['airnotifieraccesskey'], $branding['airnotifierappname']);
+                utility::apply_airnotifier_settings($branding);
                 set_config('enabled', 1, 'tool_moodiymobile');
             }
             $transaction->allow_commit();
+            utility::invalidate_airnotifier_caches();
         } catch (\Throwable $exception) {
             $transaction->rollback($exception);
             throw $exception;
         }
-        return $present ? 'applied' : 'staged_waiting_for_key';
+        return $matched ? 'applied' : 'staged_waiting_for_pair';
+    }
+
+    /**
+     * Read and lock the two persisted global fields inside the owning apply transaction.
+     *
+     * @param array $settings Authenticated complete settings.
+     * @return bool
+     */
+    private static function matches_current_pair(array $settings): bool {
+        global $DB;
+        $digest = $settings[self::PRECONDITION];
+        if ($digest === null) {
+            return false;
+        }
+        $rows = $DB->get_records_sql(
+            'SELECT name, value FROM {config} WHERE name IN (?, ?) ORDER BY name FOR UPDATE',
+            ['airnotifieraccesskey', 'airnotifierappname']
+        );
+        $key = $rows['airnotifieraccesskey']->value ?? null;
+        $name = $rows['airnotifierappname']->value ?? null;
+        return count($rows) === 2 && is_string($key) && is_string($name)
+            && hash_equals($digest, hash('sha256', $key)) && $name === $settings['airnotifierappname'];
     }
 
     /**
@@ -112,13 +141,13 @@ final class deployment_branding {
      * @return array
      */
     public static function acknowledgement(array $settings, string $siteuuid, string $state): array {
-        if (!in_array($state, ['applied', 'staged_waiting_for_key'], true)) {
+        if (!in_array($state, ['applied', 'staged_waiting_for_pair'], true)) {
             throw new \invalid_parameter_exception('Invalid deployment branding state.');
         }
         ksort($settings);
         $ack = ['mode' => self::MODE, 'schema_version' => 1,
             'request_sha256' => hash('sha256', json_encode($settings, JSON_THROW_ON_ERROR)),
-            'state' => $state, 'key_write_performed' => false];
+            'state' => $state, 'pair_write_performed' => false];
         ksort($ack);
         return ['status' => 'success', 'deployment_branding' => $ack,
             'deployment_branding_signature' => hash_hmac('sha256', json_encode($ack, JSON_THROW_ON_ERROR), $siteuuid)];
