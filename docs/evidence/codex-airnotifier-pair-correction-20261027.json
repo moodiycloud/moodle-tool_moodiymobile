@@ -46,8 +46,8 @@
       "pid": 3594235,
       "global_app_name": "fixturemobile",
       "component_app_name": "fixturemobile",
-      "key_sha256": "9432eaeb3d35fc96836055c988e45bd07ef2ef9f63c88f8f3f22f5287a4cb32a",
-      "coherent_synthetic_pair": true
+      "coherent_synthetic_pair": true,
+      "key_digest_matches_owned_fixture": true
     },
     "real_boundaries": [
       "Core database queue and owner frame",
