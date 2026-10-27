@@ -29,7 +29,9 @@ if (PHP_SAPI !== 'cli' || $argc !== 3) {
 }
 // Bootstrap the PHPUnit database as a utility actor without resetting the parent's fixture.
 define('PHPUNIT_UTIL', true);
-require($argv[1] . '/vendor/autoload.php');
+// Moodle 5.1+ keeps Composer above public/, while dirroot and PHPUnit remain inside it.
+$composerroot = is_file($argv[1] . '/vendor/autoload.php') ? $argv[1] : dirname($argv[1]);
+require($composerroot . '/vendor/autoload.php');
 require($argv[1] . '/lib/phpunit/bootstrap.php');
 $CFG->forced_plugin_settings = ['auth_maintenance' => []];
 $payload = json_decode(base64_decode($argv[2], true), true, 512, JSON_THROW_ON_ERROR);

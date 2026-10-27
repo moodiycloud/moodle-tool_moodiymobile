@@ -28,7 +28,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
       mariadb:
-        image: mariadb:10.11
+        # Moodle main now requires MariaDB 11.4; retain 10.11 coverage on released tracks.
+        image: ${{ matrix.moodle-branch == 'main' && 'mariadb:11.4' || 'mariadb:10.11' }}
         env:
           MYSQL_USER: 'root'
           MYSQL_ALLOW_EMPTY_PASSWORD: "true"

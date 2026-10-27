@@ -61,12 +61,26 @@
     "index.php": "634bbd2c8b4544cbe676fe0f6519f468159f6befce12b74badd88f806037da98",
     "updatesettings.php": "58dbed2b7f4a99cbc668da5f3fb88b9f5ae4bf39e767423d3bdf5ac554f32cef",
     "version.php": "c1b76ada4db507d27ca8b6f91b7e5c143b749fcb328da3988f0bee7b8e2b1c3a",
-    "tests/deployment_branding_test.php": "3735e3b01c24cae984f891e6e04a51b23fa678c3d3c8b36ea9014f41c0a24ae6",
-    "tests/fixtures/deployment_branding_actor.php": "13b673f76c1b54fd9e905eed6a2de068e85472672e503bc3a2cf0a70d5d94780"
+    "tests/deployment_branding_test.php": "9778437bfba88e29e72ed256ce6f7ef72ec88cea1547951332cf82d241325bbb",
+    "tests/fixtures/deployment_branding_actor.php": "3cb2b281fd0b04d6439eabcd9c63fab2833b9716e6e1c65078672e00e0d94a8e"
   },
   "limits": [
     "Hosted CI matrix has not run yet.",
     "No live Cloud task, SSH runtime delivery or push-notification acceptance is claimed.",
     "Standalone app/bundled-hosting ownership remains unresolved; Core retains the existing standalone path."
-  ]
+  ],
+  "hosted_first_attempt": {
+    "run": 40449715783,
+    "released_45_50_lanes_passed": true,
+    "public_root_actor_bootstrap_failed_before_ready": true,
+    "main_mariadb_minimum_refused_before_tests": "11.4 required;10.11 supplied"
+  },
+  "actor_compatibility_followup": {
+    "tests": 4,
+    "assertions": 36,
+    "phpunit_deprecations": 6,
+    "passed": true,
+    "moodle": "5.0.11",
+    "limits": "Current-head5.1+ hosted repeat required."
+  }
 }

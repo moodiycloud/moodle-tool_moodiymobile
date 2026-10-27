@@ -178,7 +178,7 @@ final class deployment_branding_test extends \advanced_testcase {
         try {
             stream_set_timeout($pipes[1], 10);
             $ready = fgets($pipes[1]);
-            $this->assertNotFalse($ready);
+            $this->assertNotFalse($ready, $ready === false ? stream_get_contents($pipes[2]) : '');
             $ready = json_decode($ready, true, 512, JSON_THROW_ON_ERROR);
             $this->assertNotSame(getmypid(), $ready['pid']);
             $this->assertSame(hash('sha256', 'provider-before'), $ready['loaded_key_sha256']);
