@@ -155,16 +155,16 @@ class utility {
     /**
      * Applies the mobile-app branding for the currently configured Airnotifier site.
      *
-     * On agentless Premium boxes the signed-callback `?data=` / updatesettings.php paths
-     * never run: the access key is written straight to the core `airnotifieraccesskey`
-     * config via admin/cli/cfg.php, and branding is staged on the `tool_moodiymobile`
-     * config. This step makes the live mobile-app branding keys (app names, androidappid,
+     * On agentless Premium boxes the deployment writes the access key straight to
+     * the core `airnotifieraccesskey` config via admin/cli/cfg.php. Branding may be
+     * staged by the deployment or by the signed key-preserving updatesettings.php mode.
+     * This step makes the live mobile-app branding keys (app names, androidappid,
      * iosappid, setuplink, forcedurlscheme) consistent with that configured key so the
      * provisioned site is correctly branded without an admin page visit.
      *
      * The effective branding is the stored Airnotifier payload merged over the plugin
-     * defaults, with the live `airnotifieraccesskey` config value taking precedence so the
-     * access key the box already received is never overwritten. It is a no-op (returning
+     * defaults, excluding `airnotifieraccesskey` from writes so the access key the box
+     * already received is never overwritten. It is a no-op (returning
      * false) when no Airnotifier access key is configured, or when no branding payload has
      * been staged on the plugin config, so callers can rely on the return value to report
      * whether branding was applied.
@@ -179,8 +179,7 @@ class utility {
      *              branding payload is available.
      */
     public static function apply_airnotifier_branding(): bool {
-        $accesskey = trim((string) (get_config('moodle', 'airnotifieraccesskey') ?: ''));
-        if ($accesskey === '') {
+        if (!self::has_configured_airnotifier_key()) {
             return false;
         }
 
@@ -192,14 +191,25 @@ class utility {
             return false;
         }
 
-        // Defaults first, stored payload over them, then pin the live access key so the
-        // key the box already holds is authoritative.
+        // Branding never needs to rewrite a key. A bootstrap-cached value may have
+        // been replaced or removed by its owner since this process started.
         $effective = array_merge(self::DEFAULTSETTING_AIRNOTIFIER, $stored);
-        $effective['airnotifieraccesskey'] = $accesskey;
+        unset($effective['airnotifieraccesskey']);
 
         self::apply_airnotifier_settings($effective);
 
         return true;
+    }
+
+    /**
+     * Check persisted key presence without relying on a process's bootstrap cache.
+     *
+     * @return bool
+     */
+    public static function has_configured_airnotifier_key(): bool {
+        global $DB;
+        $key = $DB->get_field('config', 'value', ['name' => 'airnotifieraccesskey']);
+        return is_string($key) && trim($key) !== '';
     }
 
     /**

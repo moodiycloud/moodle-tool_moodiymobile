@@ -65,7 +65,11 @@ $out = '';
 
 // Internal client logic.
 if ($isinternal) {
-    if (!$hasairnotifier) {
+    // Key-free branding may have arrived before the deployment's credential.
+    if (
+        !$hasairnotifier || (!array_key_exists('airnotifieraccesskey', $airnotifiersetting)
+            && !\tool_moodiymobile\utility::has_configured_airnotifier_key())
+    ) {
         $notify = new \core\output\notification(
             get_string('enabled_requires_app', 'tool_moodiymobile'),
             \core\output\notification::NOTIFY_WARNING
