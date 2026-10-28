@@ -1,0 +1,86 @@
+{
+  "recorded_utc": "2026-10-27T04:02:41Z",
+  "scope": "isolated local synthetic Moodle and Core fixtures; no live deployment or operational mutation",
+  "baseline": {
+    "source": "16c1c1b3e0ae713e32b5640e715054fa3ab269d6",
+    "tests": 25,
+    "assertions": 70,
+    "phpunit_deprecations": 4
+  },
+  "candidate": {
+    "moodle": "5.0.11 (Build 20261005)",
+    "php": "8.3.35",
+    "mysql": "8.4.11",
+    "tests": 34,
+    "assertions": 153,
+    "phpunit_deprecations": 6
+  },
+  "causal_before": {
+    "separate_process_provider_readback_changed": true,
+    "stale_branding_helper_overwrote_newer_key": true
+  },
+  "integrated_controls": {
+    "passed": 13,
+    "names": [
+      "competing_provider_readback",
+      "all_eight_fields",
+      "missing_key_staged",
+      "provider_then_followup_applies",
+      "second_save_with_provider_readback",
+      "late_provider_write_preserved",
+      "invalid_hmac",
+      "stale_timestamp",
+      "mixed_key",
+      "partial_fields",
+      "unknown_mode",
+      "external_preservation_refused_before_write",
+      "old_peer_refused_before_write"
+    ],
+    "actual_core_signed_transport": true,
+    "provider_phase_synthetic": true
+  },
+  "actual_dml_rollback": {
+    "failure_class": "dml_write_exception",
+    "transaction_closed": true,
+    "all_target_rows_unchanged": true
+  },
+  "authenticated_admin_page": {
+    "timestamp_utc": "2026-10-27T04:02:54Z",
+    "authenticated_admin_page_http": 200,
+    "missing_key_stayed_disabled": true,
+    "provider_key_enabled_on_later_visit": true,
+    "live_effects": false
+  },
+  "quality": {
+    "moodle_phpcs_errors": 0,
+    "moodle_phpcs_warnings": 0
+  },
+  "product_and_test_sha256": {
+    "classes/deployment_branding.php": "14239797c6930a80488ba8635769b2682fa1c710803da774cd272d9850a091b4",
+    "classes/utility.php": "049c9a27435a987ad0cbcafd188dba01373f22cb3e36607514ef5ccd8c6ce838",
+    "index.php": "634bbd2c8b4544cbe676fe0f6519f468159f6befce12b74badd88f806037da98",
+    "updatesettings.php": "58dbed2b7f4a99cbc668da5f3fb88b9f5ae4bf39e767423d3bdf5ac554f32cef",
+    "version.php": "c1b76ada4db507d27ca8b6f91b7e5c143b749fcb328da3988f0bee7b8e2b1c3a",
+    "tests/deployment_branding_test.php": "9778437bfba88e29e72ed256ce6f7ef72ec88cea1547951332cf82d241325bbb",
+    "tests/fixtures/deployment_branding_actor.php": "3cb2b281fd0b04d6439eabcd9c63fab2833b9716e6e1c65078672e00e0d94a8e"
+  },
+  "limits": [
+    "Hosted CI matrix has not run yet.",
+    "No live Cloud task, SSH runtime delivery or push-notification acceptance is claimed.",
+    "Standalone app/bundled-hosting ownership remains unresolved; Core retains the existing standalone path."
+  ],
+  "hosted_first_attempt": {
+    "run": 40449715783,
+    "released_45_50_lanes_passed": true,
+    "public_root_actor_bootstrap_failed_before_ready": true,
+    "main_mariadb_minimum_refused_before_tests": "11.4 required;10.11 supplied"
+  },
+  "actor_compatibility_followup": {
+    "tests": 4,
+    "assertions": 36,
+    "phpunit_deprecations": 6,
+    "passed": true,
+    "moodle": "5.0.11",
+    "limits": "Current-head5.1+ hosted repeat required."
+  }
+}

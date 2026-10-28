@@ -229,6 +229,7 @@ final class utility_test extends \advanced_testcase {
 
         // A live access key exists, but no branding payload was staged on the plugin config.
         set_config('airnotifieraccesskey', 'box-minted-key');
+        set_config('airnotifierappname', 'provider-owned-name');
         unset_config('airnotifiersetting', 'tool_moodiymobile');
 
         // An admin has already configured their own tool_mobile branding.
@@ -253,6 +254,7 @@ final class utility_test extends \advanced_testcase {
         // Simulate the agentless Premium path: the access key was written straight to core
         // config via cfg.php, and branding was staged on the plugin config.
         set_config('airnotifieraccesskey', 'box-minted-key');
+        set_config('airnotifierappname', 'provider-owned-name');
         utility::store_airnotifier_settings([
             'airnotifierappname' => 'commoodiyclient',
             'androidappid' => 'com.moodiy.client',
@@ -264,7 +266,7 @@ final class utility_test extends \advanced_testcase {
         // Access key already on the box stays authoritative (never overwritten by the payload).
         $this->assertSame('box-minted-key', get_config('moodle', 'airnotifieraccesskey'));
         // Stored branding is applied.
-        $this->assertSame('commoodiyclient', get_config('moodle', 'airnotifierappname'));
+        $this->assertSame('provider-owned-name', get_config('moodle', 'airnotifierappname'));
         $this->assertSame('com.moodiy.client', get_config('tool_mobile', 'androidappid'));
         $this->assertSame('987654321', get_config('tool_mobile', 'iosappid'));
         // Keys absent from the stored payload fall back to plugin defaults.
@@ -276,6 +278,54 @@ final class utility_test extends \advanced_testcase {
             utility::DEFAULTSETTING_AIRNOTIFIER['forcedurlscheme'],
             get_config('tool_mobile', 'forcedurlscheme')
         );
+    }
+
+    /**
+     * SQL Server locks the same bound pair without unsupported FOR UPDATE syntax.
+     */
+    public function test_pair_lock_uses_sql_server_transaction_hints(): void {
+        global $DB;
+        $original = $DB;
+        $driver = $this->createMock(\moodle_database::class);
+        $driver->expects($this->once())->method('is_transaction_started')->willReturn(true);
+        $driver->expects($this->once())->method('get_dbfamily')->willReturn('mssql');
+        $rows = ['airnotifierappname' => (object)['name' => 'airnotifierappname', 'value' => 'fixture']];
+        $driver->expects($this->once())->method('get_records_sql')->willReturnCallback(
+            function ($sql, $params) use ($rows): array {
+                $this->assertStringNotContainsString('FOR UPDATE', $sql);
+                $this->assertStringContainsString('WITH (UPDLOCK, HOLDLOCK)', $sql);
+                $this->assertStringContainsString('ORDER BY name', $sql);
+                $this->assertSame(['airnotifieraccesskey', 'airnotifierappname'], $params);
+                return $rows;
+            }
+        );
+        $DB = $driver;
+        try {
+            $this->assertSame($rows, utility::lock_airnotifier_pair());
+        } finally {
+            $DB = $original;
+        }
+    }
+
+    /**
+     * Complete pair writes require their own physical commit; partial branding retains nested behavior.
+     */
+    public function test_complete_pair_refuses_outer_transaction_before_writes(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        $before = $DB->get_records_menu('config', [], '', 'name,value');
+        $outer = $DB->start_delegated_transaction();
+        $this->assertTrue($DB->is_transaction_started());
+        try {
+            utility::apply_airnotifier_settings(['airnotifieraccesskey' => 'fixture-new-key',
+                'airnotifierappname' => 'fixture-new-app']);
+            $this->fail('An outer transaction cannot own the complete pair cache boundary.');
+        } catch (\dml_transaction_exception $expected) {
+            $this->assertSame($before, $DB->get_records_menu('config', [], '', 'name,value'));
+        }
+        utility::apply_airnotifier_settings(['androidappid' => 'com.fixture.partial']);
+        $this->assertSame('com.fixture.partial', get_config('tool_mobile', 'androidappid'));
+        $outer->allow_commit();
     }
 
     /**
@@ -315,6 +365,7 @@ final class utility_test extends \advanced_testcase {
         global $CFG;
 
         $this->resetAfterTest(true);
+        $this->preventResetByRollback();
         set_config('enabled', 0, 'tool_moodiymobile');
         $CFG->forced_plugin_settings = ['auth_maintenance' => []];
 

@@ -46,6 +46,9 @@ if (!empty($data)) {
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new coding_exception(get_string('invalidjsondata', 'tool_moodiymobile'));
         }
+        if (array_key_exists(\tool_moodiymobile\deployment_branding::FIELD, $datajson)) {
+            throw new coding_exception(get_string('invalidjsondata', 'tool_moodiymobile'));
+        }
         \tool_moodiymobile\utility::store_airnotifier_settings($datajson);
         \tool_moodiymobile\utility::apply_airnotifier_settings($datajson);
     } catch (Exception $e) {
@@ -65,13 +68,21 @@ $out = '';
 
 // Internal client logic.
 if ($isinternal) {
-    if (!$hasairnotifier) {
+    $preservedpair = array_key_exists(\tool_moodiymobile\deployment_branding::FIELD, $airnotifiersetting);
+    $pairready = $preservedpair
+        ? \tool_moodiymobile\deployment_branding::apply($airnotifiersetting) === 'applied'
+        : true;
+    // Guarded staging may precede pair delivery or survive a later foreign writer.
+    if (
+        !$hasairnotifier || !$pairready || (!array_key_exists('airnotifieraccesskey', $airnotifiersetting)
+            && !\tool_moodiymobile\utility::has_configured_airnotifier_key())
+    ) {
         $notify = new \core\output\notification(
             get_string('enabled_requires_app', 'tool_moodiymobile'),
             \core\output\notification::NOTIFY_WARNING
         );
         $out = $OUTPUT->render($notify);
-    } else {
+    } else if (!$preservedpair) {
         set_config('enabled', 1, 'tool_moodiymobile');
         \tool_moodiymobile\utility::apply_airnotifier_settings($airnotifiersetting);
     }

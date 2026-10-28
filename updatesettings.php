@@ -111,7 +111,11 @@ if (!is_array($postdata)) {
         'message' => 'Invalid JSON provided: ' . json_last_error_msg(),
     ]);
     exit;
-} else if (isset($postdata['data']) && is_array($postdata['data']) && array_key_exists('airnotifieraccesskey', $postdata['data'])) {
+} else if (
+    isset($postdata['data']) && is_array($postdata['data'])
+        && (array_key_exists('airnotifieraccesskey', $postdata['data'])
+            || array_key_exists(\tool_moodiymobile\deployment_branding::FIELD, $postdata['data']))
+) {
     ksort($postdata['data']);
     $data = json_encode($postdata['data']);
     if ($data === false) {
@@ -153,13 +157,29 @@ if (!is_array($postdata)) {
         echo json_encode(\tool_moodiymobile\utility::stale_timestamp_error_response());
         exit;
     }
+    $deploymentbranding = array_key_exists(\tool_moodiymobile\deployment_branding::FIELD, $postdata['data']);
+    if ($deploymentbranding && !\tool_moodiymobile\deployment_branding::valid_payload($postdata['data'])) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'Invalid deployment branding.']);
+        exit;
+    }
+    if ($deploymentbranding && !\tool_moodiymobile\utility::is_internal_site()) {
+        http_response_code(403);
+        echo json_encode(['status' => 'error', 'message' => 'Deployment branding requires an internal site.']);
+        exit;
+    }
     try {
-        \tool_moodiymobile\utility::store_airnotifier_settings($postdata['data']);
-        \tool_moodiymobile\utility::apply_airnotifier_settings($postdata['data']);
-        \tool_moodiymobile\utility::enable_internal_site_with_airnotifier($postdata['data']);
-        $response = [
-            'status' => 'success',
-        ];
+        if ($deploymentbranding) {
+            $state = \tool_moodiymobile\deployment_branding::apply($postdata['data']);
+            $response = \tool_moodiymobile\deployment_branding::acknowledgement($postdata['data'], $siteuuid, $state);
+        } else {
+            \tool_moodiymobile\utility::store_airnotifier_settings($postdata['data']);
+            \tool_moodiymobile\utility::apply_airnotifier_settings($postdata['data']);
+            \tool_moodiymobile\utility::enable_internal_site_with_airnotifier($postdata['data']);
+            $response = [
+                'status' => 'success',
+            ];
+        }
     } catch (Exception $e) {
         // Handle exception.
         $response = [
