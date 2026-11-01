@@ -86,11 +86,29 @@ jobs:
           sudo locale-gen en_AU.UTF-8
           echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
 
+      - name: Add declared registration dependency
+        run: moodle-plugin-ci add-plugin --branch main moodiycloud/moodle-tool_moodiyregistration
+
       - name: Install moodle-plugin-ci
         run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+
+      - name: Record runtime and registration dependency
+        run: |
+          git -C moodle rev-parse HEAD
+          git -C moodle-plugin-ci-plugins/moodle-tool_moodiyregistration rev-parse HEAD
+          php -r '
+            define("MOODLE_INTERNAL", true);
+            define("MATURITY_STABLE", 200);
+            $root = is_file("moodle/public/version.php") ? "moodle/public" : "moodle";
+            require "$root/version.php";
+            echo "Moodle $release; core=$version; branch=$branch\n";
+            $plugin = new stdClass();
+            require "$root/admin/tool/moodiyregistration/version.php";
+            echo "$plugin->component; version=$plugin->version\n";
+          '
 
       - name: PHP Lint
         if: ${{ !cancelled() }}

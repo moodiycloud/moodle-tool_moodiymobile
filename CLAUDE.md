@@ -62,7 +62,9 @@ Every matrix case installs Moodle and the plugin from source, then runs PHP
 lint, PHPCS/PHPDoc with zero allowed warnings, validation, savepoints, Mustache,
 Grunt, PHPUnit and Behat. PHP Mess Detector is informational. Stable 5.3 has
 explicit PHP 8.3/8.4 cases on both PostgreSQL 17 and MariaDB 11.4; moving upstream
-main is separate development coverage. Publishing happens only through the
+main is separate development coverage. The declared registration dependency is
+installed from its source main branch; CI records its commit/installed version
+and Moodle's commit/version before running checks. Publishing happens only through the
 separate tag-driven `.github/workflows/moodle-release.yml`.
 
 ## Architecture
