@@ -99,16 +99,11 @@ jobs:
         run: |
           git -C moodle rev-parse HEAD
           git -C moodle-plugin-ci-plugins/moodle-tool_moodiyregistration rev-parse HEAD
-          php -r '
-            define("MOODLE_INTERNAL", true);
-            define("MATURITY_STABLE", 200);
-            $root = is_file("moodle/public/version.php") ? "moodle/public" : "moodle";
-            require "$root/version.php";
-            echo "Moodle $release; core=$version; branch=$branch\n";
-            $plugin = new stdClass();
-            require "$root/admin/tool/moodiyregistration/version.php";
-            echo "$plugin->component; version=$plugin->version\n";
-          '
+          root=moodle
+          if [ -f moodle/public/version.php ]; then root=moodle/public; fi
+          grep -E '^\$(release|version|branch)[[:space:]]*=' "$root/version.php"
+          grep -E '^\$plugin->(component|version|requires|supported)[[:space:]]*=' \
+            "$root/admin/tool/moodiyregistration/version.php"
 
       - name: PHP Lint
         if: ${{ !cancelled() }}
