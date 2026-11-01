@@ -4,11 +4,9 @@
 # (https://moodlehq.github.io/moodle-plugin-ci/). Moodle is installed from git for
 # each (branch, php, database) combination, so there is no dependency on prebuilt
 # snapshot images and every check runs per-branch. This lets us test against the
-# in-development Moodle 5.3 line (the `main` branch) on both databases — the case
-# the Catalyst reusable workflow could not cover (it has no main+mariadb snapshot).
+# stable Moodle 5.3 line on both databases, independently of moving upstream main.
 #
 # Matches the local `make pre-pr` runner, which also uses moodle-plugin-ci.
-# When Moodle branches 5.3 stable, add a `MOODLE_503_STABLE` row to the matrix.
 name: Tool moodiymobile CI
 
 on: [push, pull_request]
@@ -19,7 +17,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:18
+        image: postgres:${{ matrix.pgsql-ver || '18' }}
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
@@ -28,8 +26,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
       mariadb:
-        # Moodle main now requires MariaDB 11.4; retain 10.11 coverage on released tracks.
-        image: ${{ matrix.moodle-branch == 'main' && 'mariadb:11.4' || 'mariadb:10.11' }}
+        # Both services start for every row; stable 5.3 needs MariaDB >= 11.4.
+        image: mariadb:${{ matrix.mariadb-ver || '10.11' }}
         env:
           MYSQL_USER: 'root'
           MYSQL_ALLOW_EMPTY_PASSWORD: "true"
@@ -55,9 +53,14 @@ jobs:
           # Moodle 5.2 (PHP 8.3–8.4)
           - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_502_STABLE', php: '8.4', database: 'pgsql'}
-          # Moodle 5.3dev / main (PHP 8.3–8.4) — both databases
-          - {moodle-branch: 'main', php: '8.3', database: 'pgsql'}
-          - {moodle-branch: 'main', php: '8.4', database: 'mariadb'}
+          # Moodle 5.3 stable: PHP 8.3/8.4, PostgreSQL >= 17, MariaDB >= 11.4.
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.3', database: 'pgsql', pgsql-ver: '17', mariadb-ver: '11.4'}
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.3', database: 'mariadb', pgsql-ver: '17', mariadb-ver: '11.4'}
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.4', database: 'pgsql', pgsql-ver: '17', mariadb-ver: '11.4'}
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.4', database: 'mariadb', pgsql-ver: '17', mariadb-ver: '11.4'}
+          # Moving upstream main is separate development coverage, not a 5.3 pass.
+          - {moodle-branch: 'main', php: '8.3', database: 'pgsql', mariadb-ver: '11.4'}
+          - {moodle-branch: 'main', php: '8.4', database: 'mariadb', mariadb-ver: '11.4'}
 
     name: ${{ matrix.moodle-branch }} / php${{ matrix.php }} / ${{ matrix.database }}
 
@@ -83,11 +86,24 @@ jobs:
           sudo locale-gen en_AU.UTF-8
           echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
 
+      - name: Add declared registration dependency
+        run: moodle-plugin-ci add-plugin --branch main moodiycloud/moodle-tool_moodiyregistration
+
       - name: Install moodle-plugin-ci
         run: moodle-plugin-ci install --plugin ./plugin --db-host=127.0.0.1
         env:
           DB: ${{ matrix.database }}
           MOODLE_BRANCH: ${{ matrix.moodle-branch }}
+
+      - name: Record runtime and registration dependency
+        run: |
+          git -C moodle rev-parse HEAD
+          git -C moodle-plugin-ci-plugins/moodle-tool_moodiyregistration rev-parse HEAD
+          root=moodle
+          if [ -f moodle/public/version.php ]; then root=moodle/public; fi
+          grep -E '^\$(release|version|branch)[[:space:]]*=' "$root/version.php"
+          grep -E '^\$plugin->(component|version|requires|supported)[[:space:]]*=' \
+            "$root/admin/tool/moodiyregistration/version.php"
 
       - name: PHP Lint
         if: ${{ !cancelled() }}
