@@ -21,9 +21,12 @@ Layout: `index.php` (admin UI flow), `updatesettings.php` (remote config endpoin
 - Admin pages must call `require_login()` and check `require_capability('moodle/site:config', ...)`
 
 ## Build, Test, and Development Commands
-There is no npm/composer build pipeline in this plugin. Work from a Moodle installation root:
+There is no npm/composer build pipeline in this plugin. Install it from the plugin directory:
 ```bash
 cp -r . {moodle-root}/admin/tool/moodiymobile
+```
+Then work from a Moodle installation root:
+```bash
 php admin/cli/upgrade.php
 php admin/cli/purge_caches.php
 php local/codechecker/run.php admin/tool/moodiymobile
@@ -33,7 +36,7 @@ Useful syntax check while iterating:
 find admin/tool/moodiymobile -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
-Local CI, from the `moodiy_meta` workspace root, before any push or PR (plan and prerequisites: `../moodle-plugin-quality-toolkit.md`):
+Local CI, from the meta-repo, before any push or PR (plan and prerequisites: `../moodle-plugin-quality-toolkit.md`):
 
 ```bash
 make -C moodle_plugins pre-pr PLUGIN=moodle-tool_moodiymobile
