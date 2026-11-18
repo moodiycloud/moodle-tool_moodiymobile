@@ -1,16 +1,31 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-This repository is a Moodle admin/tool plugin (`tool_moodiymobile`). Keep changes scoped to plugin conventions:
-- `index.php`: main admin UI flow (registration checks, form handling, config sync).
-- `updatesettings.php`: API endpoint for remote airnotifier config updates.
-- `settings.php` and `version.php`: admin registration and plugin metadata.
-- `classes/`: plugin classes (`utility.php`, `setting_form.php`, `observers.php`).
-- `db/events.php`: event observer wiring.
-- `lang/en/tool_moodiymobile.php`: all user-facing strings.
+Canonical agent instructions for `tool_moodiymobile`. `CLAUDE.md` imports this file; task detail lives in the docs routed at the end. This repository is public: keep internal hosts, credentials and internal decisions out of it.
+
+## What This Is
+
+`tool_moodiymobile` is a Moodle admin tool plugin (`admin/tool/moodiymobile`) that configures mobile app integration between Moodle sites and the Moodiy Cloud platform. It manages airnotifier push notification settings and mobile app enablement.
+
+- **Component:** `tool_moodiymobile`
+- **Moodle version:** Requires 4.5+ (`2024100700`); supports Moodle 4.5–5.3 (`supported = [405, 503]`)
+- **Dependency:** `tool_moodiyregistration` (for site UUID and registration status)
+- **Maturity:** Stable; `version.php` holds the current release.
+
+Layout: `index.php` (admin UI flow), `updatesettings.php` (remote config endpoint), `settings.php`, `version.php`, `classes/`, `db/events.php`, `lang/en/tool_moodiymobile.php`, `tests/`. File-by-file map: `docs/architecture.md`.
+
+## Security rules
+
+- `updatesettings.php` uses HMAC-SHA256 verification with the site UUID as the key
+- CORS restricted to the MoodiyCloud API URL
+- All admin pages require `moodle/site:config` capability
+- Admin pages must call `require_login()` and check `require_capability('moodle/site:config', ...)`
 
 ## Build, Test, and Development Commands
-There is no npm/composer build pipeline in this plugin. Work from a Moodle installation root:
+There is no npm/composer build pipeline in this plugin. Install it from the plugin directory:
+```bash
+cp -r . {moodle-root}/admin/tool/moodiymobile
+```
+Then work from a Moodle installation root:
 ```bash
 php admin/cli/upgrade.php
 php admin/cli/purge_caches.php
@@ -20,6 +35,19 @@ Useful syntax check while iterating:
 ```bash
 find admin/tool/moodiymobile -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
+
+Local CI, from the meta-repo, before any push or PR (plan and prerequisites: `../moodle-plugin-quality-toolkit.md`):
+
+```bash
+make -C moodle_plugins pre-pr PLUGIN=moodle-tool_moodiymobile
+make -C moodle_plugins lint-only PLUGIN=moodle-tool_moodiymobile
+moodle_plugins/scripts/summarize.sh moodle-tool_moodiymobile
+```
+
+`make pre-pr` mirrors this plugin's current GitHub workflow. `make lint-only`
+is the faster repo-level PHPCS sweep when you only need coding-style feedback.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the standalone `moodle-plugin-ci` recipe with zero allowed PHPCS/PHPDoc warnings; publishing happens only through the tag-driven `.github/workflows/moodle-release.yml`. Matrix detail: `docs/architecture.md` → GitHub Actions CI.
 
 ## Coding Style & Naming Conventions
 Follow Moodle PHP coding style:
@@ -46,3 +74,12 @@ Recent history favors short imperative commit subjects, often with issue/PR refs
 - Use clear subject lines in imperative mood.
 - In PRs, include: problem summary, linked issue, verification steps, and screenshots for UI/admin-page changes.
 - Call out config/security-impacting changes explicitly (especially around `updatesettings.php`).
+
+## When you… | Read first
+
+| When you… | Read first |
+| --- | --- |
+| Change the operating modes, config storage, airnotifier keys or a key file | `docs/architecture.md` |
+| Change mobile-app branding or the AirNotifier push-identity pair | `docs/codex-deployment-branding.md`; `PLANS.md` |
+| Prepare a release or the Moodle plugins directory submission | `CHANGES.md`; `MOODLE_ORG_SUBMISSION.md`; `README.md` |
+| Run or debug the local CI runner | `../AGENTS.md` (meta `moodle_plugins/`) → Local CI Runner; `../moodle-plugin-quality-toolkit.md` |
