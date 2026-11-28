@@ -8,8 +8,7 @@ record for `tool_moodiymobile`.
 - Name: Moodiy mobile app
 - Component: `tool_moodiymobile`
 - Plugin type: Administration tool (`tool`)
-- Release name: `0.2.0`
-- Version: `2026060700`
+- Release name and version number: copy `$plugin->release` and `$plugin->version` from the [version.php](version.php) in the release being submitted.
 - Maturity: Stable
 - Supported Moodle versions: 4.5, 5.0, 5.1, 5.2, 5.3
 - License: GNU GPL v3 or later
